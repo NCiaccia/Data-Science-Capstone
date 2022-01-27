@@ -9,16 +9,17 @@ January 2022
 import pandas as pd
 import numpy as np
 import streamlit as st
-import matplotlib.pyplot as plt
 import plotly.express as px
-
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 st.set_page_config(layout='wide')
+
 
 # Title for dashboard
 st.title("Welcome to my Data Science Dashboard!")
 st.markdown('### This dashboard examines several questions about the provided data to see \
-             if there are any apparent relationships between variables')
+             if there are any apparent relationships between variables.')
 st.markdown('By: Nicole Ciaccia - PAR PEP team - January 2022')
 
 
@@ -30,57 +31,17 @@ df['state'] = df['state'].str.upper()
 
 # Create a dictionary  of all state names and abbreviations
 us_state_to_abbrev = {
-	    "ALABAMA": "AL",
-	    "ALASKA": "AK",
-	    "ARIZONA": "AZ",
-	    "ARKANSAS": "AR",
-	    "CALIFORNIA": "CA",
-	    "COLORADO": "CO",
-	    "CONNECTICUT": "CT",
-	    "DELAWARE": "DE",
-	    "FLORIDA": "FL",
-	    "GEORGIA": "GA",
-	    "HAWAII": "HI",
-	    "IDAHO": "ID",
-	    "ILLINOIS": "IL",
-	    "INDIANA": "IN",
-	    "IOWA": "IA",
-	    "KANSAS": "KS",
-	    "KENTUCKY": "KY",
-	    "LOUISIANA": "LA",
-	    "MAINE": "ME",
-	    "MARYLAND": "MD",
-	    "MASSACHUSETTS": "MA",
-	    "MICHIGAN": "MI",
-	    "MINNESOTA": "MN",
-	    "MISSISSIPPI": "MS",
-	    "MISSOURI": "MO",
-	    "MONTANA": "MT",
-	    "NEBRASKA": "NE",
-	    "NEVADA": "NV",
-	    "NEW HAMPSHIRE": "NH",
-	    "NEW JERSEY": "NJ",
-	    "NEW MEXICO": "NM",
-	    "NEW YORK": "NY",
-	    "NORTH CAROLINA": "NC",
-	    "NORTH DAKOTA": "ND",
-	    "OHIO": "OH",
-	    "OKLAHOMA": "OK",
-	    "OREGON": "OR",
-	    "PENNSYLVANIA": "PA",
-	    "RHODE ISLAND": "RI",
-	    "SOUTH CAROLINA": "SC",
-	    "SOUTH DAKOTA": "SD",
-	    "TENNESSEE": "TN",
-	    "TEXAS": "TX",
-	    "UTAH": "UT",
-	    "VERMONT": "VT",
-	    "VIRGINIA": "VA",
-	    "WASHINGTON": "WA",
-	    "WEST VIRGINIA": "WV",
-	    "WISCONSIN": "WI",
-	    "WYOMING": "WY",
-        "PUERTO RICO": "PR",
+	    "ALABAMA": "AL",  "ALASKA": "AK",  "ARIZONA": "AZ",  "ARKANSAS": "AR",
+	    "CALIFORNIA": "CA", "COLORADO": "CO",  "CONNECTICUT": "CT", "DELAWARE": "DE",
+	    "FLORIDA": "FL",  "GEORGIA": "GA",  "HAWAII": "HI",  "IDAHO": "ID",  "ILLINOIS": "IL",
+	    "INDIANA": "IN",  "IOWA": "IA",  "KANSAS": "KS",  "KENTUCKY": "KY",  "LOUISIANA": "LA",
+	    "MAINE": "ME",  "MARYLAND": "MD",  "MASSACHUSETTS": "MA",  "MICHIGAN": "MI",  "MINNESOTA": "MN",
+	    "MISSISSIPPI": "MS",  "MISSOURI": "MO",  "MONTANA": "MT",  "NEBRASKA": "NE",  "NEVADA": "NV",
+	    "NEW HAMPSHIRE": "NH",  "NEW JERSEY": "NJ",  "NEW MEXICO": "NM",  "NEW YORK": "NY",  "NORTH CAROLINA": "NC",
+	    "NORTH DAKOTA": "ND",  "OHIO": "OH",  "OKLAHOMA": "OK",  "OREGON": "OR",  "PENNSYLVANIA": "PA",
+	    "RHODE ISLAND": "RI",  "SOUTH CAROLINA": "SC",  "SOUTH DAKOTA": "SD",  "TENNESSEE": "TN",  "TEXAS": "TX",
+	    "UTAH": "UT",  "VERMONT": "VT",  "VIRGINIA": "VA",  "WASHINGTON": "WA",  "WEST VIRGINIA": "WV",
+	    "WISCONSIN": "WI",  "WYOMING": "WY",  "PUERTO RICO": "PR",
 	}
 
 # get rid of special characters to start the cleaning
@@ -104,7 +65,6 @@ char_to_replace = {'/': ' ',
 
 for key, value in char_to_replace.items():
     df['state'] = df['state'].str.replace(key, value)
-
 
 
 # Get abbreviations for already clean data (ie contains only state name)
@@ -168,23 +128,32 @@ df_no_state=df_no_state.merge(df_no_state_expand,left_index=True, right_index=Tr
 #combine the new no_state data that mostly has state2 filled in with the good_state data to get the final dataset. 
 final_dataset= pd.concat([df_good_state, df_no_state])
 
-final_dataset['state_final'] = np.where(final_dataset['state2'].isin(abbrevs), final_dataset['state2'], "Unknown_State")
+final_dataset['state_final'] = np.where(final_dataset['state2'].isin(abbrevs), final_dataset['state2'], "_Unknown_State")
 
 # (end up with 92 observations with no state2, but that is the best we can do)
-check_state = final_dataset.loc[final_dataset['state_final'] == "Unknown_State"]
+check_state = final_dataset.loc[final_dataset['state_final'] == "_Unknown_State"]
 
+# Get dataframe of just the scores and just timings (used in graphs later on)
+scores=final_dataset.iloc[:, 20:] 
+scores.drop(columns=['state2', 'gender', 'home_computer', 'state', 'age', 'state_final'], inplace=True) 
 
+timings=final_dataset.iloc[:, :19] 
+
+# Create AgeGroup variable
+bins= [0,20,30,40,50,60,110]
+labels = ['Under 20','20-29','30-39','40-49', '50-59','60+']
+final_dataset['AgeGroup'] = pd.cut(final_dataset['age'], bins=bins, labels=labels, right=False)
+
+################################ DATA CLEAN UP FINISHED ################################
+########################################################################################
+################################ BEGIN USING STREAMLIT #################################
 
 st.text("")
 st.text("")
-st.markdown('##### Investigation 1: Do any individual items have a high correlation with the Total Score?')
-
-# Get dataframe of just the scores
-final_dataset2=final_dataset.iloc[:, 20:] 
-final_dataset2.drop(columns=['state2', 'gender', 'home_computer', 'state', 'age', 'state_final'], inplace=True) 
+st.markdown('##### Investigation 1: Do any individual items have a high correlation with the total score?')
 
 # Run Pearson correlation
-corrs=final_dataset2.corr(method ='pearson')
+corrs=scores.corr(method ='pearson')
 
 # Only keep the last row - correlation between item and total score
 corrs2=corrs.loc[['sum_score']]
@@ -199,148 +168,316 @@ corrs3.reset_index(inplace=True)
 corrs3.rename(columns={'index':'Item', 'sum_score':'correlation'}, inplace=True)
 
 # Interactive bar chart of correlations for each item
-fig1=px.bar(corrs3,x='Item', y='correlation')
-st.plotly_chart(fig1)
-st.markdown("**Findings:** No items jump out as showing a particularly high correlation with the total score.\
-            Items 7 and 4 do the best job, but at only slightly above 0.5, that isn't all that high. \
-            Item 20 clearly has the worst correlation with total score, but that could be due to its \
-            position at the end of the test. No exciting conclusions here! ")
+fig1=px.bar(corrs3,x='Item', y='correlation', color='correlation',  color_continuous_scale=["blue", "white", "red"],  
+            title ="Correlations Between Each Item and Total Score")
+# fig1=px.bar(corrs3,x='Item', y='correlation', color='correlation',  range_color=[0,1], color_continuous_scale=["blue", "white", "red"],  
+#             title ="Correlations Between Each Item and Total Score")
+fig1.update_layout(margin=dict(l=20, r=20, t=30, b=20))
+
+a_col, b_col = st.columns(2)
+with a_col:
+    st.plotly_chart(fig1)
+with b_col:
+    st.text("")
+    st.text("")
+    st.text("")
+    st.text("")
+    st.text("")
+    st.text("")
+    st.text("")
+    st.text("")
+    st.markdown("**Findings:** For Praxis tests, we consider anything with a correlation above 0.25 or 0.3 to\
+            be a relatively good item. Using that same criteria on this data, it looks like most items\
+            have a decent correlation with the total score. Items 4 and 7 stand out as the highest; Items\
+            5, 15 and 16 are on the cusp, but still relatively good. The only item that stands out is \
+            Item 20 which clearly has the worst correlation. This could in part be due to its postition at\
+            the end of the test. Let's keep investigating item stats to see what we uncover.")
+
+st.text("")
+
+# Get AIS for each item
+for i in range(1,21):
+    datax = final_dataset['gs_%s'%i].value_counts()
+    datay = pd.DataFrame({'gs_%s'%i: datax.index,'N': datax.values,'AIS': ((datax.values/datax.values.sum())*100).round(2)})
+    datay['Item'] = "%s"%i
+    datay= datay.loc[datay['gs_%s'%i] == 1]
+    datay= datay[["Item", "AIS", "N"]] 
+    if i == 1:
+       ais=datay
+    else:
+        ais=ais.append(datay)
+
+# Get Avg time for each item
+temp1 = timings.mean(axis=0)
+temp1.reset_index(drop=True, inplace=True) 
+temp2 = pd.Series(range(2,21))
+frame = {'Item': temp2, 'Avg_Time': temp1}
+time_means = pd.DataFrame(frame)
+
+st.markdown('##### Investigation 2: How do the average item scores and item timings compare for each item?')
+trace1 = go.Bar(
+    x=ais['Item'],
+    y=ais['AIS'],
+    name='AIS (%)',
+    marker=dict(color='paleturquoise')
+)
+trace2 = go.Scatter(
+    x=time_means['Item'],
+    y=time_means['Avg_Time'],
+    name='Avg Time (seconds)',
+    marker=dict(color='tomato'),
+    yaxis='y2'
+)
+
+fig2 = make_subplots(specs=[[{"secondary_y": True}]])
+fig2.add_trace(trace1)
+fig2.add_trace(trace2,secondary_y=True)
+fig2['layout'].update(height = 550, width = 1000, xaxis_title="Item", yaxis_title="Average Item Score (AIS)",
+                      title_text='Average Item Score and Time Spent on Each Time', title_x=0.25, 
+                      margin=dict(l=20, r=20, t=30, b=20))
+fig2.update_yaxes(title_text="Average Time Spent on Item", secondary_y=True)
+
+
+col1, col2 = st.columns([2.5,7])
+with col2:
+    st.plotly_chart(fig2)
+
+
+    
+st.markdown("**Findings:** Looking at the Average Item Score and Timing plot, we can see a lot\
+            more information about Items 20 and 15. Almost 100% of candidates got them correct and \
+            they were the 2 items the candidates spent the least amount of time on. From these visualizations\
+            we can conclude that these were 2 very easy items, so it makes sense that they were marked as \
+            non discriminating items in the graph above. Item 16 also had a very high AIS and low average time \
+            so it is a reasonable assumption that this item was easy as well. The correlations were more about \
+            item difficulty as opposed to item position. A new fact about the items that this plot reveals is that \
+            Item 13 was by far the most difficult item and one that candidates spent a fair amout of time on.")
+st.markdown("Note: No Item Timings were provided for the first item")
+st.text("")
 st.text("")
 
 
-# Create Age Groups to see impact of Age on Score and Testing Time
-bins= [0,20,30,40,50,60,110]
-labels = ['Under 20','20-29','30-39','40-49', '50-59','60+']
-final_dataset['AgeGroup'] = pd.cut(final_dataset['age'], bins=bins, labels=labels, right=False)
+# Examine impact of Age on Score and Testing Time
+st.markdown('##### Investigation 3: Does age impact total score?')
+fig3= px.histogram(final_dataset,x='sum_score',color='AgeGroup',facet_col='AgeGroup', facet_col_wrap=3, height=700, width=1200, 
+             category_orders={"AgeGroup": labels}, title="Total Score Histograms by Age Subgroup")
 
-st.markdown('##### Investigation 2: Does Age Impact Total Score?')
-fig_hist = px.histogram(final_dataset.loc[final_dataset.AgeGroup=='Under 20'],x='sum_score', title='Under 20')
-fig_hist2 = px.histogram(final_dataset.loc[final_dataset.AgeGroup=='20-29'],x='sum_score', title='20-29')
-fig_hist3 = px.histogram(final_dataset.loc[final_dataset.AgeGroup=='30-39'],x='sum_score', title='30-39')
-fig_hist4 = px.histogram(final_dataset.loc[final_dataset.AgeGroup=='40-49'],x='sum_score', title='40-49')
-fig_hist5= px.histogram(final_dataset.loc[final_dataset.AgeGroup=='50-59'],x='sum_score', title='50-59')
-fig_hist6 = px.histogram(final_dataset.loc[final_dataset.AgeGroup=='60+'],x='sum_score', title='60+')
+c_col, d_col = st.columns((2.4,1))
+with c_col:
+    st.plotly_chart(fig3)
 
-col1, col2, col3 = st.columns(3)
+with d_col:
+    st.text("")
+    st.text("")
+    st.text("")
+    st.text("")
+    st.text("")
+    st.text("")
+    st.text("")
+    st.text("")
+    st.text("")
+    st.text("")
+    st.text("")
+    st.text("")
+    st.text("")
+    st.text("")
+    st.text("")
+    st.markdown("**Findings:** Distributions for each age category seem to be relatively simlilar\
+            in that the data is very left skewed for each histogram. It appears that whatever \
+            this exam was, the questions were not very difficult. No one age range seems to have a \
+            distribution that shows they are especially more or lessproficient than the others. Though \
+            the N for Under 20 is very low, it is interesting that no one in this age category got \
+            below a 16. However the 50-59 and 60+ groups also have very few candidates below 16 so \
+            it's not as if being younger seems to be an extreme advantage. You can also see from \
+            these plots that the majority of the population falls within the middle age groups which \
+            could be interesting depending on what exam the data is actually for.")
 
-with col1:
-    st.plotly_chart(fig_hist)  
-    st.plotly_chart(fig_hist4)  
-with col2:
-    st.plotly_chart(fig_hist2)
-    st.plotly_chart(fig_hist5)
-with col3:
-    st.plotly_chart(fig_hist3)
-    st.plotly_chart(fig_hist6)
-
-
-
-
-# st.markdown("**Findings:** Distributions for each age category seem to be relatively simlilar\
-#             with most candidates in each age group getting a score of 19. \
-#             We can also see from this histogram that the data is very left skewed. \
-#             It appears that whatever this exam was, the questions were not difficult.")
-
-
-
-
-# names = labels
-# fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(10, 8))
-# final_dataset.hist('sum_score', ax=axes[0,0])
-
-# plt.show()
-
-
-
-# for ax, name in zip(axes, names):
-#     ax.set(xticks=[], yticks=[], title=name)
+st.text("")
+st.markdown('##### Investigation 4: Did any states outperform the others?')
+state_means = final_dataset.groupby('state_final').agg({'sum_score': ['mean', 'min', 'max', 'count']})
+state_means.columns = state_means.columns.droplevel(0)
+state_means.reset_index(inplace=True)
+state_means = state_means[state_means.state_final != '_Unknown_State']
 
 
-
-
-
-# rwgor.loc[rwgor.attractionName >=165
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Histogram of testing time 
-# bins_list = [0, 300, 600, 900, 1200, 1500, 3000, 4600]
-# fig2, ax = plt.subplots()
-# plt.hist(final_dataset.rt_total,edgecolor="black", color="m", bins=bins_list)
-# plt.xticks(bins_list, rotation = 90)
-# plt.title("Histogram of Total Testing Time")
-# plt.xlabel("Total Testing Time")
-# plt.ylabel("Frequencies")
-# st.pyplot(fig2)
-
-# Interactive Bar chart of Mean Scores by State and Gender
-state_gender_means = final_dataset.groupby(['gender', 'state_final'])['sum_score'].mean().reset_index()
-f_means = state_gender_means.loc[state_gender_means['gender'] == 'Female']
-m_means = state_gender_means.loc[state_gender_means['gender'] == 'Male']
-state_gender_means2=f_means.append(m_means)
-state_gender_means2.sort_values(by=['state_final'], inplace=True)
-
-states=st.selectbox('State:', abbrevs) #create selector box
-state_gender_means3=state_gender_means2.query('state_final==@states') #query the data using the selector box
-test=px.bar(state_gender_means3,x='gender',y='sum_score', color='gender', title ="Mean Scores by Gender and State")
-st.plotly_chart(test)
-
-
-
-
-
-
-
-fig4 = px.bar(state_gender_means2, x="state_final", color="gender",
-             y='sum_score',
-             title="A Grouped Bar Chart With Plotly Express in Python",
-             barmode='group',
-             height=700,
-             width=1000,
-             facet_row="gender"
-            )
-
+fig4=px.bar(state_means,x='state_final', y='mean', height=600, width=1500, color='count', 
+            hover_data=["mean", "min", "max", "count"], title ="Total Score Mean by State",
+            labels={"state_final": "State", "mean": "Average Total Score", "max": "Max", "min": "Min", "count": "N"})
+            
+fig4.update_layout(margin=dict(l=20, r=20, t=30, b=20))
 st.plotly_chart(fig4)
 
+st.markdown("**Findings:** No state stands out particularly as an outlier. The one visual exception would be \
+            Puerto Rico, but then when you hover over that bar, you can see the N=1 so that is a very small \
+            sample size. Utah and Montana have the highest means, but only slightly higher than other states \
+            so if analysis was being done to see if the test was biased by geographical region in any way, \
+            it would be reassuring that there doesnt seem to be any evidence that results are skewed based on \
+            location. This graph does give some more information about the testing population, indicating that\
+            there are a few states with much higher representation than others, namely California, Florida, \
+            New York and Texas.")
 
 
+st.text("")
+st.markdown('##### Investigation 5: Does gender have any impact on the data?')
+st.markdown("- First let's look at the distribution of Males and Females in the data:")
 
-# col1, col2, col3, col4, col5 =st.columns((2,2,5,1,5))
-
-# for i in range(1,11):
-#     chk01 = col1.checkbox('Item %s'%i, value = 1 )
-    
-# for i in range(11,21):
-#     chk01 = col2.checkbox('Item %s'%i, value = 1 )
-
-
-
-
-from plotly.subplots import make_subplots
-import plotly.graph_objects as go
-
-fig = make_subplots(rows=3, cols=3, subplot_titles=labels)
-#fig.add_trace(go.Histogram(final_dataset.loc[final_dataset.AgeGroup=='20-29'],x='sum_score'), row=1, col=1)
-fig.update_layout(height=600, width=600, title_text="Total Score Histograms by Age Subgroup")
-st.plotly_chart(fig)
+gender_means = final_dataset.groupby('gender').agg({'sum_score': ['mean', 'min', 'max', 'count', 'std']})
+gender_means.columns = gender_means.columns.droplevel(0)
+gender_means.reset_index(inplace=True)
+gender_means['AgeGroup']='Total'
+age_gender_means = final_dataset.groupby(['gender', 'AgeGroup']).agg({'sum_score': ['mean', 'min', 'max', 'count',  'std']})
+age_gender_means.columns = age_gender_means.columns.droplevel(0)
+age_gender_means.reset_index(inplace=True)
 
 
+fig5 = px.bar(age_gender_means, x="AgeGroup", color="gender", y="count", barmode='group', height=600, 
+             color_discrete_map={'Male': 'skyblue','Female': 'thistle'},
+             labels={"count": "N", "AgeGroup": "Age Group", "gender": "Gender"})
+fig5.update_layout(title_text="Male and Female by Age Group", title_x=0.47)
+
+fig6 = px.pie(gender_means, values='count', names='gender',color='gender', labels={"count": "N", "gender": "Gender"}, 
+              color_discrete_map={'Male': 'skyblue','Female': 'thistle'})
+fig6.update_traces(textposition='inside', textinfo='percent+label')
+fig6.update_layout(title_text="Male and Female for Total Group", title_x=0.47)
+
+a_col, b_col = st.columns(2)
+with a_col:
+    st.plotly_chart(fig5)
+with b_col:
+    st.plotly_chart(fig6)
+
+st.markdown("**Findings:** Based on these plots it appears the data is about evenly distrubuted between males \
+            and females. There is some disparity in the 20-29 and 50-59 year age ranges, but in most groups \
+            it is relatively similar and the overall distribution is about equal.")
+
+st.text("")
+st.markdown("Now lets see if gender has any impact on scores:")
+
+age_gender_means2=age_gender_means.append(gender_means)
+age_gender_means2.sort_values(by=['AgeGroup'], inplace=True)
+age_gender_means2["new"] = range(2,len(age_gender_means2)+2)
+age_gender_means2['new'] = np.where(age_gender_means2['AgeGroup']== "Under 20", 0,(age_gender_means2['new']))
+age_gender_means2=age_gender_means2.sort_values("new").drop('new', axis=1)
+age_gender_means2 = age_gender_means2[["gender", "AgeGroup", "count", "min", "max", "mean", "std"]]
+age_gender_means2.columns = map(str.capitalize, age_gender_means2.columns)
+age_gender_means2 = age_gender_means2.rename({'Agegroup': 'Age Group', 'Count': 'N', 'Std': 'St. Dev.'}, axis=1)  
 
 
+# HACK: double the dataframe for getting total in box plot
+temp=final_dataset.copy(deep=True)
+temp['AgeGroup']='Total'
+df_for_box=final_dataset.append(temp)
+labels2=labels.copy()
+labels2.append('Total')
+fig7 = px.box(df_for_box, y="AgeGroup", x="sum_score", color="gender",  category_orders={"AgeGroup": labels2},
+              color_discrete_map={'Male': 'skyblue','Female': 'thistle'}, title= "Total Score by Gender", 
+              labels={"sum_score": "Total Score", "AgeGroup": "Age Group", "gender": "Gender"})
+
+fig7.update_layout(margin=dict(l=20, r=20, t=30, b=20), title_x=0.5)
 
 
+a_col, b_col = st.columns(2)
+with a_col:
+    st.text("")
+    st.plotly_chart(fig7)
+with b_col:
+    #st.dataframe(age_gender_means2, height=400)
+    st.markdown('Total Score Statistics by Gender')
+    st.dataframe(age_gender_means2.assign(hack='').set_index('hack'), height=450)
+
+st.markdown("**Findings:** It appears that Males did slightly better on this test than Females \
+            as the overall mean for Males is slightly higher, and looking at the box plot, the \
+            Interquartile Range for each Age Group is slightly higher. When you look at the plot \
+            for the Total group, you can see the overall distribution of scores is quite similar \
+            though in that the IQR is identical, though the median for Males is 18 as opposed to 17 \
+            for Females.")
 
 
+st.text("")
+st.markdown('If there is interest in breakdown by state, Mean and Time data by Gender has also been \
+            plotted. Select one state or multiple to see how they compare.')
+
+def state_gender (var):
+    means = final_dataset.groupby(['gender', 'state_final'])[var].mean().reset_index()
+    f_means = means.loc[means['gender'] == 'Female']
+    m_means = means.loc[means['gender'] == 'Male']
+    means2=f_means.append(m_means)
+    means2.sort_values(by=['state_final'], inplace=True)
+    means2 = means2[means2.state_final != '_Unknown_State']
+    means2.sort_values(by=['state_final', 'gender'], inplace=True)
+    return means2
+
+state_gender_means= state_gender('sum_score')
+state_gender_times= state_gender('rt_total')
+
+
+states=st.multiselect('Select 1 or more States:', abbrevs, default='AL') #create selector box
+state_gender_means2=state_gender_means.query('state_final==@states') #query the data using the selector box
+state_gender_times2=state_gender_times.query('state_final==@states') 
+
+fig8=px.bar(state_gender_means2,x='state_final',y='sum_score', color='gender', barmode='group', title ="Mean Scores by Gender and State",
+            color_discrete_map={'Male': 'skyblue','Female': 'thistle'}, 
+            labels={"sum_score": "Total Score", "state_final": "State", "gender": "Gender"})
+fig8.update_layout(margin=dict(l=20, r=20, t=30, b=20), title_x=0.5)
+fig9=px.bar(state_gender_times2,x='state_final',y='rt_total', color='gender', barmode='group', title ="Average Time by Gender and State",
+            color_discrete_map={'Male': 'skyblue','Female': 'thistle'}, 
+            labels={"rt_total": "Average Time", "state_final": "State", "gender": "Gender"})
+fig9.update_layout(margin=dict(l=20, r=20, t=30, b=20), title_x=0.5)
+
+a_col, b_col = st.columns(2)
+with a_col:
+    st.text("")
+    st.plotly_chart(fig8)
+with b_col:
+    st.text("")
+    st.plotly_chart(fig9)
+
+
+st.text("")
+st.text("")
+st.text("")
+st.markdown('##### Investigation 6: What are the relationships between Time with Age and Performance?')
+
+def time_age_score(var):
+    df = final_dataset.groupby([var]).agg({'rt_total': ['count', 'mean']})
+    df.columns = df.columns.droplevel(0)    
+    df.reset_index(inplace=True)
+    df.rename(columns={'count':'N', 'mean':'Avg_Time'}, inplace=True)
+    return df
+
+time_age=time_age_score('age')
+time_age=time_age[time_age.age != 0]
+
+fig10 = px.scatter(time_age, x="age", y="Avg_Time", size='N', labels={"Avg_Time": "Average Time", "age": "Age"})
+fig10.update_layout(margin=dict(l=20, r=20, t=30, b=20), title='Average Time by Age', title_x=0.5)
+
+
+time_score=time_age_score('sum_score')
+
+fig11 = px.scatter(time_score, x="sum_score", y="Avg_Time", size='N', labels={"Avg_Time": "Average Time", "sum_score": "Total Score"})
+fig11.update_layout(margin=dict(l=20, r=20, t=30, b=20), title='Average Time by Score', title_x=0.5)
+fig11.update_traces(marker_color='green', opacity=0.5)
+
+a_col, b_col = st.columns(2)
+with a_col:
+    st.text("")
+    st.plotly_chart(fig10)
+with b_col:
+    st.text("")
+    st.plotly_chart(fig11)
+
+
+st.markdown("**Findings:** Looking at the Time vs Age plot, there does not really seem to be any stand out connections. \
+            The average time for each age is in the same realm with a few outliers as we get into the older ages but \
+            overall there does not appear to be a clear relationship.  \n In the Time vs Total Score plot, there does \
+            appear to be some conclusions to draw. It seems that scores continue to rise as time spent increases, to a \
+            point. A limit is reached and then you can see as perfect or nearly perfect scores are approached, the average \
+            time spent actually drops. That is, the most proficient test takers were able to complete the exam in less \
+            time than the group right below them.")
+
+
+st.text("")
+st.text("")
+st.markdown('##### Investigation 7: Can we use any of the variables to predict performance?')
+st.markdown("Looking at the investigations above, let's see how good of a predictor time spent testing is in \
+            predicting a test taker's total score.")
