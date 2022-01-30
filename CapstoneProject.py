@@ -13,15 +13,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-st.set_page_config(layout='wide')
-
-
-# Title for dashboard
-st.title("Welcome to my Data Science Dashboard!")
-st.markdown('### This dashboard examines several questions about the provided data to see \
-             if there are any apparent relationships between variables.')
-st.markdown('By: Nicole Ciaccia - PAR PEP team - January 2022')
-
 
 # Read in data
 df = pd.read_csv("data_capstone_dsa2021_2022.csv")
@@ -148,6 +139,16 @@ final_dataset['AgeGroup'] = pd.cut(final_dataset['age'], bins=bins, labels=label
 ########################################################################################
 ################################ BEGIN USING STREAMLIT #################################
 
+st.set_page_config(layout='wide')
+
+
+# Title for dashboard
+st.title("Welcome to my Data Science Dashboard!")
+st.markdown('### This dashboard examines several questions about the provided data to see \
+             if there are any apparent relationships between variables.')
+st.markdown('By: Nicole Ciaccia - PAR PEP team - January 2022')
+
+
 st.text("")
 st.text("")
 st.markdown('##### Investigation 1: Do any individual items have a high correlation with the total score?')
@@ -174,6 +175,7 @@ fig1=px.bar(corrs3,x='Item', y='correlation', color='correlation',  color_contin
 #             title ="Correlations Between Each Item and Total Score")
 fig1.update_layout(margin=dict(l=20, r=20, t=30, b=20))
 
+st.text("")
 a_col, b_col = st.columns(2)
 with a_col:
     st.plotly_chart(fig1)
@@ -237,7 +239,7 @@ fig2['layout'].update(height = 550, width = 1000, xaxis_title="Item", yaxis_titl
                       margin=dict(l=20, r=20, t=30, b=20))
 fig2.update_yaxes(title_text="Average Time Spent on Item", secondary_y=True)
 
-
+st.text("")
 col1, col2 = st.columns([2.5,7])
 with col2:
     st.plotly_chart(fig2)
@@ -281,14 +283,13 @@ with d_col:
     st.text("")
     st.text("")
     st.text("")
-    st.text("")
     st.markdown("**Findings:** Distributions for each age category seem to be relatively simlilar\
             in that the data is very left skewed for each histogram. It appears that whatever \
-            this exam was, the questions were not very difficult. No one age range seems to have a \
-            distribution that shows they are especially more or lessproficient than the others. Though \
+            this exam was, the questions were not very difficult. No one particular age range seems to have a \
+            distribution that shows they are especially more or less proficient than the others. Though \
             the N for Under 20 is very low, it is interesting that no one in this age category got \
-            below a 16. However the 50-59 and 60+ groups also have very few candidates below 16 so \
-            it's not as if being younger seems to be an extreme advantage. You can also see from \
+            below a 16. However the  \n 50-59 and 60+ groups also have very few candidates below 16 so \
+            it's not as if being younger seems to be an extreme advantage.  \n \n You can also see from \
             these plots that the majority of the population falls within the middle age groups which \
             could be interesting depending on what exam the data is actually for.")
 
@@ -300,17 +301,41 @@ state_means.reset_index(inplace=True)
 state_means = state_means[state_means.state_final != '_Unknown_State']
 
 
-fig4=px.bar(state_means,x='state_final', y='mean', height=600, width=1500, color='count', 
-            hover_data=["mean", "min", "max", "count"], title ="Total Score Mean by State",
+fig4a = px.choropleth(state_means, color='mean', locations='state_final', locationmode = 'USA-states',
+                    scope='usa', title="Average Total Score by US State", hover_data=['state_final', 'mean', 'count'],
+                    labels={"state_final": "State", "mean": "Average Total Score", "count": "N"},
+                    color_continuous_scale= 'sunset')
+fig4a.update_layout(dragmode = False, margin=dict(l=20, r=20, t=30, b=20), title_x=0.5, title_y=.95)
+
+
+fig4b = px.choropleth(state_means, color='count', locations='state_final', locationmode = 'USA-states',
+                    scope='usa', title="Counts by US State", hover_data=['state_final', 'mean', 'count'],
+                    labels={"state_final": "State", "mean": "Average Total Score", "count": "N"},
+                    color_continuous_scale= 'sunset')
+fig4b.update_layout(dragmode = False, margin=dict(l=20, r=20, t=30, b=20), title_x=0.5, title_y=.95)
+
+a_col, b_col = st.columns(2)
+with a_col:
+    st.plotly_chart(fig4a)
+with b_col:
+    st.plotly_chart(fig4b)
+
+
+fig4c=px.bar(state_means,x='state_final', y='mean', height=600, width=1500, color='count', 
+            hover_data=["mean", "min", "max", "count"], title ="Total Score Mean by State with Counts",
             labels={"state_final": "State", "mean": "Average Total Score", "max": "Max", "min": "Min", "count": "N"})
+fig4c.update_layout(margin=dict(l=20, r=20, t=30, b=20), title_x=0.5)
+
+col1, col2 = st.columns([1,12])
+with col2:
+    st.plotly_chart(fig4c)
             
-fig4.update_layout(margin=dict(l=20, r=20, t=30, b=20))
-st.plotly_chart(fig4)
 
 st.markdown("**Findings:** No state stands out particularly as an outlier. The one visual exception would be \
             Puerto Rico, but then when you hover over that bar, you can see the N=1 so that is a very small \
             sample size. Utah and Montana have the highest means, but only slightly higher than other states \
-            so if analysis was being done to see if the test was biased by geographical region in any way, \
+            and again N is small so no grand conclusions can be drawn. Based on this plot, if analysis was \
+            being done to see if the test was biased by geographical region in any way, \
             it would be reassuring that there doesnt seem to be any evidence that results are skewed based on \
             location. This graph does give some more information about the testing population, indicating that\
             there are a few states with much higher representation than others, namely California, Florida, \
@@ -346,7 +371,7 @@ with a_col:
 with b_col:
     st.plotly_chart(fig6)
 
-st.markdown("**Findings:** Based on these plots it appears the data is about evenly distrubuted between males \
+st.markdown("**Findings:** Based on these plots it appears the data is about evenly distributed between males \
             and females. There is some disparity in the 20-29 and 50-59 year age ranges, but in most groups \
             it is relatively similar and the overall distribution is about equal.")
 
@@ -448,9 +473,28 @@ def time_age_score(var):
 time_age=time_age_score('age')
 time_age=time_age[time_age.age != 0]
 
+time_age2=time_age_score('AgeGroup')
+
 fig10 = px.scatter(time_age, x="age", y="Avg_Time", size='N', labels={"Avg_Time": "Average Time", "age": "Age"})
 fig10.update_layout(margin=dict(l=20, r=20, t=30, b=20), title='Average Time by Age', title_x=0.5)
 
+fig10a = px.scatter(time_age2, x="AgeGroup", y="Avg_Time", size='N', labels={"Avg_Time": "Average Time", "AgeGroup": "Age Group"})
+fig10a.update_layout(margin=dict(l=20, r=20, t=30, b=20), title='Average Time by Age Group', title_x=0.5)
+
+a_col, b_col = st.columns(2)
+with a_col:
+    st.text("")
+    st.plotly_chart(fig10)
+with b_col:
+    st.text("")
+    st.plotly_chart(fig10a)
+    
+st.markdown("**Findings:** Looking at the Time vs Age plot, there does not really seem to be any stand out connections. \
+            The average time for each age is in the same realm with a few individual ages being higher in the older ages \
+            but overall there does not appear to be a clear relationship. However, when Time is plotted vs *Age Group*, \
+            a connection becomes clear. You can see very distinctly that the average time spent testing increases \
+            as the Age Group gets older. This is good evidence that sometimes you must look at the same variables \
+            from different angles to see if any connections are present.")
 
 time_score=time_age_score('sum_score')
 
@@ -461,23 +505,160 @@ fig11.update_traces(marker_color='green', opacity=0.5)
 a_col, b_col = st.columns(2)
 with a_col:
     st.text("")
-    st.plotly_chart(fig10)
+    st.plotly_chart(fig11)
 with b_col:
     st.text("")
-    st.plotly_chart(fig11)
-
-
-st.markdown("**Findings:** Looking at the Time vs Age plot, there does not really seem to be any stand out connections. \
-            The average time for each age is in the same realm with a few outliers as we get into the older ages but \
-            overall there does not appear to be a clear relationship.  \n In the Time vs Total Score plot, there does \
-            appear to be some conclusions to draw. It seems that scores continue to rise as time spent increases, to a \
-            point. A limit is reached and then you can see as perfect or nearly perfect scores are approached, the average \
-            time spent actually drops. That is, the most proficient test takers were able to complete the exam in less \
-            time than the group right below them.")
+    st.text("")    
+    st.text("")
+    st.text("")
+    st.text("")
+    st.text("")
+    st.text("")
+    st.text("")
+    st.text("")
+    st.text("")
+    st.markdown("**Findings:** In the Time vs Total Score plot, there also appears to be some conclusions to draw. \
+            It seems that scores continue to rise as time spent increases, to a point. A limit is reached and \
+            then you can see as perfect or nearly perfect scores are approached, the average time spent actually \
+            drops. That is, the most proficient test takers were able to complete the exam in less time than the \
+            group right below them.")
 
 
 st.text("")
 st.text("")
 st.markdown('##### Investigation 7: Can we use any of the variables to predict performance?')
-st.markdown("Looking at the investigations above, let's see how good of a predictor time spent testing is in \
-            predicting a test taker's total score.")
+st.markdown("Looking at the investigations above, item 7 had the best correlation with total score and there seemed \
+            to be some connections between Age Group and total time spent testing. Let's see how good of a \
+            predictor these 3 variables are in predicting a test taker's total score.")
+            
+from sklearn import preprocessing
+import warnings; warnings.simplefilter('ignore')
+from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier # for Random Forest
+from sklearn.ensemble import GradientBoostingClassifier # for Gradient Boosting Machine
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, cohen_kappa_score
+
+f = final_dataset[['gs_7', 'rt_total', 'AgeGroup']]
+t = final_dataset[['sum_score']]
+
+a={'Under 20': 0,'20-29': 1,'30-39': 2,'40-49': 3, '50-59':4,'60+':5}
+f['age_converted'] = f['AgeGroup'].map(a)
+f.drop(columns=['AgeGroup'], inplace=True)
+
+
+f = preprocessing.scale(f) #normalize to 0 mean and unit standard deviation
+
+model_SVM = SVC()
+model_RF = RandomForestClassifier()
+model_GBM = GradientBoostingClassifier()
+
+X_train, X_test, y_train, y_test = train_test_split(f, t, test_size=0.5, random_state=42)
+
+tmp1 = model_SVM.fit(X_train,y_train)
+tmp2 = model_RF.fit(X_train,y_train)
+tmp3 = model_GBM.fit(X_train,y_train)
+
+y_pred_SVM = model_SVM.predict(X_test)
+y_pred_RF = model_RF.predict(X_test)
+y_pred_GBM = model_GBM.predict(X_test)
+
+# --- Model evaluation and selection ---
+model_evals = pd.DataFrame(columns = ['Model', 'Accuracy', 'Kappa'])
+model_evals['Model']=['SVM', 'RF', 'GBM' ]
+
+acc_svm = accuracy_score(y_pred_SVM, y_test)
+acc_rf = accuracy_score(y_pred_RF, y_test)
+acc_gbm = accuracy_score(y_pred_GBM, y_test)
+
+kap_svm = cohen_kappa_score(y_pred_SVM, y_test)
+kap_rf = cohen_kappa_score(y_pred_RF, y_test)
+kap_gbm = cohen_kappa_score(y_pred_GBM, y_test)
+model_evals['Accuracy']=[acc_svm, acc_rf, acc_gbm]
+model_evals['Kappa']=[kap_svm, kap_rf, kap_gbm]
+
+
+model_predictions=pd.DataFrame({'SVM': y_pred_SVM, 'RF': y_pred_RF, 'GBM': y_pred_GBM})
+y_test.reset_index(drop=True, inplace=True)
+act_pred = pd.merge(y_test, model_predictions, left_index=True, right_index=True)
+
+
+st.markdown("**Method:** Three Supervised Learning Models were used- Support Vector Machine (SVC), Random Forrest (RF) \
+            and Gradient Boosting Method (GBM). The predicted values for Total Score are plotted below against the actual \
+            total scores for each of the models.")
+st.text("")
+
+fig12=px.scatter(act_pred,x='sum_score', y='SVM', title ="Support Vector Machine Model", height=350, width=475, labels={"sum_score":"Observed", "SVM":"Predicted"})
+fig12.update_layout(margin=dict(l=10, r=10, t=30, b=20), title_x=0.5)
+fig12.update_traces(marker_color='lightcoral', opacity=0.5)
+
+
+fig13=px.scatter(act_pred,x='sum_score', y='RF', title ="Random Forrest Model", height=350, width=475, labels={"sum_score":"Observed", "RF":"Predicted"})
+fig13.update_layout(margin=dict(l=10, r=10, t=30, b=20), title_x=0.5)
+fig13.update_traces(marker_color='teal', opacity=0.5)
+
+fig14=px.scatter(act_pred,x='sum_score', y='GBM', title ="Gradient Boosting Machine Model", height=350, width=475, labels={"sum_score":"Observed", "GBM":"Predicted"})
+fig14.update_layout(margin=dict(l=10, r=10, t=30, b=20), title_x=0.5)
+fig14.update_traces(marker_color='dodgerblue', opacity=0.5)
+
+#below code is to hide row indices
+#CSS to inject contained in a string
+hide_table_row_index = """
+            <style>
+            tbody th {display:none}
+            .blank {display:none}
+            </style>
+            """
+
+a_col, b_col, c_col, d_col = st.columns([4,4,4,2.5])
+with a_col:
+    st.plotly_chart(fig12)
+with b_col:
+    st.plotly_chart(fig13)
+with c_col:
+    st.plotly_chart(fig14)
+with d_col:
+    st.text("")
+    st.text("")
+    st.text("")
+    st.text("")
+    st.markdown(hide_table_row_index, unsafe_allow_html=True)
+
+    st.table(model_evals.style.set_precision(2))
+
+st.markdown("**Findings:** As you can see based on the fact that the scatter plots are all over the place with \
+            no particular visible line or pattern, these models did a terrible job of predicting total score.\
+            Looking at the Accuracy and Kappa for each model, they are horribly low.  \n While I have been able to \
+            find some relationships between variables in this dataset, it looks like a lot more work would need to \
+            be done either adjusting the parameters of the models or finding better features in order to make more \
+            accurate predictions.")
+
+
+
+
+
+
+
+# trace1 = go.Scatter(
+#     x=y_test['obs'],
+#     y=y_test['sum_score'],
+#     mode='markers',
+#     marker=dict(color='tomato'),
+# )
+# trace2 = go.Scatter(
+#     x=df_svm['obs'],
+#     y=df_svm['sum_score'],
+#     mode='markers',
+#     marker=dict(color='green'),
+# )
+
+# fig12 = make_subplots()
+# fig12.add_trace(trace1)
+# fig12.add_trace(trace2)
+# # fig2['layout'].update(height = 550, width = 1000, xaxis_title="Item", yaxis_title="Average Item Score (AIS)",
+# #                       title_text='Average Item Score and Time Spent on Each Time', title_x=0.25, 
+# #                       margin=dict(l=20, r=20, t=30, b=20))
+# # fig2.update_yaxes(title_text="Average Time Spent on Item", secondary_y=True)
+# st.plotly_chart(fig12)
+
+
